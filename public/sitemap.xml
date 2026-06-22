@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/</loc><priority>1.0</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/membership</loc><priority>0.9</priority><changefreq>monthly</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/events</loc><priority>0.8</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/reservations</loc><priority>0.8</priority><changefreq>daily</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/league</loc><priority>0.7</priority><changefreq>weekly</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/contact</loc><priority>0.6</priority><changefreq>yearly</changefreq></url>
+  <url><loc>https://kind-ocean-0fbba3c0f.7.azurestaticapps.net/faq</loc><priority>0.6</priority><changefreq>monthly</changefreq></url>
+</urlset>

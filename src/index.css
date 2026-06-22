@@ -6,6 +6,25 @@ html, body, #root { height: 100%; }
 
 .container { max-width: 1024px; }
 
-/* small utility enhancements */
 .btn { @apply inline-block px-4 py-2 rounded shadow; }
 .sr-only { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+
+/* Smooth dark mode transitions on key elements */
+body,
+.dark-transition {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.dark .skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+/* Scroll-based reveal via framer-motion uses inline styles — no extra CSS needed */

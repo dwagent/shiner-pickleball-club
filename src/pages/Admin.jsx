@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import Page from '../components/Page'
 import { fetchMembers, fetchReservations, fetchEvents, deleteReservation, createEvent, deleteEvent, adminLogin } from '../api'
 import { useToast } from '../context/ToastContext'
 
@@ -10,8 +11,7 @@ function LoginGate({ onAuthed }) {
 
   async function handleLogin(e) {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const { token } = await adminLogin(password)
       sessionStorage.setItem('adminToken', token)
@@ -25,36 +25,30 @@ function LoginGate({ onAuthed }) {
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-16">
-      <div className="p-8 border rounded-xl bg-white shadow">
-        <div className="text-center mb-6">
-          <div className="text-4xl mb-2">🔒</div>
-          <h1 className="text-xl font-bold text-gray-900">Admin Login</h1>
-          <p className="text-sm text-gray-500 mt-1">Access restricted to club administrators.</p>
+    <Page>
+      <div className="max-w-sm mx-auto mt-16">
+        <div className="p-8 border dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">🔒</div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Admin Login</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Access restricted to club administrators.</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-3">
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+              required autoFocus />
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            <button disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg transition-colors">
+              {loading ? 'Checking…' : 'Log In'}
+            </button>
+          </form>
         </div>
-        <form onSubmit={handleLogin} className="space-y-3">
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Password"
-            className="w-full border border-gray-300 px-3 py-2.5 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
-            required
-            autoFocus
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <button
-            disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
-            {loading ? 'Checking…' : 'Log In'}
-          </button>
-        </form>
+        <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-4">
+          Set <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">ADMIN_PASSWORD</code> in Azure SWA environment variables.
+        </p>
       </div>
-      <p className="text-center text-xs text-gray-400 mt-4">
-        Set the <code className="bg-gray-100 px-1 rounded">ADMIN_PASSWORD</code> environment variable in your Azure SWA settings.
-      </p>
-    </div>
+    </Page>
   )
 }
 
@@ -84,9 +78,7 @@ export default function Admin() {
       await deleteReservation(id)
       setReservations(prev => prev.filter(r => r.id !== id))
       toast('Reservation cancelled.', 'success')
-    } catch (err) {
-      toast(err.message || 'Failed to cancel reservation.', 'error')
-    }
+    } catch (err) { toast(err.message || 'Failed to cancel reservation.', 'error') }
   }
 
   async function handleCreateEvent(e) {
@@ -97,11 +89,8 @@ export default function Admin() {
       setEvents(prev => [...prev, newE])
       setTitle(''); setDate(''); setTime(''); setDesc('')
       toast(`Event "${newE.title}" created.`, 'success')
-    } catch (err) {
-      toast(err.message || 'Failed to create event.', 'error')
-    } finally {
-      setEventLoading(false)
-    }
+    } catch (err) { toast(err.message || 'Failed to create event.', 'error') }
+    finally { setEventLoading(false) }
   }
 
   async function handleDeleteEvent(id) {
@@ -109,80 +98,49 @@ export default function Admin() {
       await deleteEvent(id)
       setEvents(prev => prev.filter(x => x.id !== id))
       toast('Event deleted.', 'success')
-    } catch (err) {
-      toast(err.message || 'Failed to delete event.', 'error')
-    }
-  }
-
-  function handleLogout() {
-    sessionStorage.removeItem('adminToken')
-    setToken(null)
+    } catch (err) { toast(err.message || 'Failed to delete event.', 'error') }
   }
 
   return (
-    <div>
+    <Page>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-900">Admin Dashboard</h1>
-        <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700 underline">
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+        <button onClick={() => { sessionStorage.removeItem('adminToken'); setToken(null) }}
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline">
           Log out
         </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* Members */}
-        <section className="p-5 border rounded-xl bg-white shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-3">Members ({members.length})</h2>
-          {members.length === 0 ? (
-            <p className="text-sm text-gray-400">No members yet.</p>
-          ) : (
+        <section className="p-5 border dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">Members ({members.length})</h2>
+          {members.length === 0 ? <p className="text-sm text-gray-400">No members yet.</p> : (
             <ul className="space-y-2">
               {members.map(m => (
-                <li key={m.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg text-sm">
-                  <span className="font-medium">{m.name}</span>
-                  <span className="text-gray-500 capitalize">{m.plan}</span>
+                <li key={m.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{m.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400 capitalize">{m.plan}</span>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        {/* Create event */}
-        <section className="p-5 border rounded-xl bg-white shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-3">Create Event</h2>
+        <section className="p-5 border dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">Create Event</h2>
           <form onSubmit={handleCreateEvent} className="space-y-2">
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="Event title"
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm"
-              required
-            />
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Event title"
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm" required />
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm"
-                required
-              />
-              <input
-                type="time"
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm"
-              />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm" required />
+              <input type="time" value={time} onChange={e => setTime(e.target.value)}
+                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm" />
             </div>
-            <textarea
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-              placeholder="Short description (optional)"
-              rows={2}
-              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm resize-none"
-            />
-            <button
-              disabled={eventLoading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
-            >
+            <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Short description (optional)" rows={2}
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none text-sm resize-none" />
+            <button disabled={eventLoading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm">
               {eventLoading ? 'Creating…' : 'Create Event'}
             </button>
           </form>
@@ -190,58 +148,40 @@ export default function Admin() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Reservations */}
-        <section className="p-5 border rounded-xl bg-white shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-3">Reservations ({reservations.length})</h2>
-          {reservations.length === 0 ? (
-            <p className="text-sm text-gray-400">No reservations.</p>
-          ) : (
+        <section className="p-5 border dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">Reservations ({reservations.length})</h2>
+          {reservations.length === 0 ? <p className="text-sm text-gray-400">No reservations.</p> : (
             <ul className="space-y-2">
               {reservations.map(r => (
-                <li key={r.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg text-sm">
+                <li key={r.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
                   <div>
-                    <span className="font-medium">Court {r.court}</span>
-                    <span className="text-gray-500 ml-2">{new Date(r.start).toLocaleString()}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Court {r.court}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">{new Date(r.start).toLocaleString()}</span>
                   </div>
-                  <button
-                    onClick={() => handleDeleteReservation(r.id)}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium ml-2"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={() => handleDeleteReservation(r.id)} className="text-red-500 hover:text-red-700 text-xs font-medium ml-2">Cancel</button>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        {/* Events */}
-        <section className="p-5 border rounded-xl bg-white shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-3">Events ({events.length})</h2>
-          {events.length === 0 ? (
-            <p className="text-sm text-gray-400">No events yet.</p>
-          ) : (
+        <section className="p-5 border dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm">
+          <h2 className="font-bold text-gray-900 dark:text-gray-100 mb-3">Events ({events.length})</h2>
+          {events.length === 0 ? <p className="text-sm text-gray-400">No events yet.</p> : (
             <ul className="space-y-2">
               {events.map(e => (
-                <li key={e.id} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg text-sm">
+                <li key={e.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm">
                   <div>
-                    <span className="font-medium">{e.title}</span>
-                    <span className="text-gray-500 ml-2">
-                      {e.date}{e.time ? ` at ${e.time}` : ''}
-                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{e.title}</span>
+                    <span className="text-gray-500 dark:text-gray-400 ml-2">{e.date}{e.time ? ` at ${e.time}` : ''}</span>
                   </div>
-                  <button
-                    onClick={() => handleDeleteEvent(e.id)}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium ml-2"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => handleDeleteEvent(e.id)} className="text-red-500 hover:text-red-700 text-xs font-medium ml-2">Delete</button>
                 </li>
               ))}
             </ul>
           )}
         </section>
       </div>
-    </div>
+    </Page>
   )
 }
