@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+
+.container { max-width: 1024px; }
+
+/* small utility enhancements */
+.btn { @apply inline-block px-4 py-2 rounded shadow; }
+.sr-only { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
