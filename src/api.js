@@ -1,55 +1,66 @@
 const API_BASE = '/api'
 
-export async function fetchMembers(){
-  const res = await fetch(`${API_BASE}/members`, { headers: { 'Accept': 'application/json' } })
+async function request(url, options = {}) {
+  let res
+  try {
+    res = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    })
+  } catch {
+    throw new Error('Network error — check your connection and try again.')
+  }
+
+  if (!res.ok) {
+    let msg = `Server error (${res.status})`
+    try {
+      const body = await res.json()
+      if (body && body.error) msg = body.error
+    } catch {}
+    throw new Error(msg)
+  }
+
   return res.json()
 }
 
-export async function createMember(member){
-  const res = await fetch(`${API_BASE}/members`, {
+export const fetchMembers = () =>
+  request(`${API_BASE}/members`)
+
+export const createMember = member =>
+  request(`${API_BASE}/members`, { method: 'POST', body: JSON.stringify(member) })
+
+export const fetchReservations = () =>
+  request(`${API_BASE}/reservations`)
+
+export const createReservation = reservation =>
+  request(`${API_BASE}/reservations`, { method: 'POST', body: JSON.stringify(reservation) })
+
+export const deleteReservation = id =>
+  request(`${API_BASE}/reservations?id=${id}`, { method: 'DELETE' })
+
+export const fetchEvents = () =>
+  request(`${API_BASE}/events`)
+
+export const createEvent = evt =>
+  request(`${API_BASE}/events`, { method: 'POST', body: JSON.stringify(evt) })
+
+export const deleteEvent = id =>
+  request(`${API_BASE}/events?id=${id}`, { method: 'DELETE' })
+
+export const sendContact = data =>
+  request(`${API_BASE}/contact`, { method: 'POST', body: JSON.stringify(data) })
+
+export const adminLogin = password =>
+  request(`${API_BASE}/admin-auth`, { method: 'POST', body: JSON.stringify({ password }) })
+
+export async function createCheckoutSession({ name, email, plan, origin }) {
+  const data = await request(`${API_BASE}/create-checkout`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(member)
+    body: JSON.stringify({ name, email, plan, origin }),
   })
-  return res.json()
+  return data.url
 }
-
-export async function fetchReservations(){
-  const res = await fetch(`${API_BASE}/reservations`, { headers: { 'Accept': 'application/json' } })
-  return res.json()
-}
-
-export async function createReservation(reservation){
-  const res = await fetch(`${API_BASE}/reservations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(reservation)
-  })
-  return res.json()
-}
-
-export async function deleteReservation(id){
-  const res = await fetch(`${API_BASE}/reservations?id=${id}`, { method: 'DELETE' })
-  return res.json()
-}
-
-export async function fetchEvents(){
-  const res = await fetch(`${API_BASE}/events`, { headers: { 'Accept': 'application/json' } })
-  return res.json()
-}
-
-export async function createEvent(evt){
-  const res = await fetch(`${API_BASE}/events`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(evt)
-  })
-  return res.json()
-}
-
-export async function deleteEvent(id){
-  const res = await fetch(`${API_BASE}/events?id=${id}`, { method: 'DELETE' })
-  return res.json()
-}
-
-export default { fetchMembers, createMember, fetchReservations, createReservation }

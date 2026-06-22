@@ -6,24 +6,29 @@ import Home from './pages/Home'
 import Membership from './pages/Membership'
 import Reservations from './pages/Reservations'
 import Events from './pages/Events'
+import Contact from './pages/Contact'
 import Admin from './pages/Admin'
+import { ToastProvider } from './context/ToastContext'
 
-export default function App(){
+export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
-        <Nav />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Home/>} />
-            <Route path="/membership" element={<Membership/>} />
-            <Route path="/reservations" element={<Reservations/>} />
-            <Route path="/events" element={<Events/>} />
-            <Route path="/admin" element={<Admin/>} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <ToastProvider>
+        <div className="min-h-screen flex flex-col">
+          <Nav />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/membership" element={<Membership />} />
+              <Route path="/reservations" element={<Reservations />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/admin" element={<Admin />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

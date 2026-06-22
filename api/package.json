@@ -1,0 +1,9 @@
+{
+  "name": "shiner-pickleball-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Shiner Pickleball Club",
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2",
+    "stripe": "^16.0.0"
+  }
+}

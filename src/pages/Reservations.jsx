@@ -1,120 +1,198 @@
 import React, { useEffect, useState } from 'react'
 import { fetchReservations, createReservation } from '../api'
+import { useToast } from '../context/ToastContext'
+import { COURTS, HOURS, DEFAULT_BOOKING_TIME, DEFAULT_BOOKING_DURATION } from '../config'
 
-function overlaps(aStart, aEnd, bStart, bEnd){
-  return (aStart < bEnd) && (bStart < aEnd)
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd
 }
 
-export default function Reservations(){
+function toLocalISO(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function startOfWeek(d) {
+  const date = new Date(d)
+  const diff = date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1)
+  return new Date(date.setDate(diff))
+}
+
+export default function Reservations() {
   const [reservations, setReservations] = useState([])
-  const [court, setCourt] = useState(1)
+  const [court, setCourt] = useState(COURTS.numbers[0])
   const [date, setDate] = useState('')
-  const [startTime, setStartTime] = useState('18:00')
-  const [duration, setDuration] = useState(60)
+  const [startTime, setStartTime] = useState(DEFAULT_BOOKING_TIME)
+  const [duration, setDuration] = useState(DEFAULT_BOOKING_DURATION)
   const [loading, setLoading] = useState(false)
+  const toast = useToast()
 
-  useEffect(()=>{
-    fetchReservations().then(setReservations).catch(()=>setReservations([]))
-  },[])
+  useEffect(() => {
+    fetchReservations().then(setReservations).catch(() => setReservations([]))
+  }, [])
 
-  async function handleReserve(e){
+  async function handleReserve(e) {
     e.preventDefault()
-    if(!date) return alert('Select a date')
-    const start = new Date(`${date}T${startTime}:00`)
-    const end = new Date(start.getTime() + duration*60000)
+    if (!date) return toast('Please select a date.', 'error')
 
-    const conflict = reservations.some(r=> r.court === Number(court) && overlaps(new Date(r.start), new Date(r.end), start, end))
-    if(conflict) return alert('Selected slot conflicts with existing reservation')
+    const [h, m] = startTime.split(':').map(Number)
+    if (h < HOURS.open || h >= HOURS.close) {
+      return toast(`Reservations are only available between ${HOURS.label}.`, 'error')
+    }
+
+    const start = new Date(`${date}T${startTime}:00`)
+    const end = new Date(start.getTime() + duration * 60000)
+
+    const conflict = reservations.some(
+      r => r.court === Number(court) && overlaps(new Date(r.start), new Date(r.end), start, end)
+    )
+    if (conflict) return toast('That slot conflicts with an existing reservation — pick another time.', 'error')
 
     setLoading(true)
-    try{
-      const r = await createReservation({ court: Number(court), start: start.toISOString(), end: end.toISOString() })
-      setReservations(prev=>[...prev, r])
-      alert('Reserved (demo)')
-    }catch(err){
-      console.error(err)
-      alert('Reservation failed')
-    }finally{ setLoading(false) }
-  }
-
-  // calendar week setup
-  const startOfWeek = (d)=>{
-    const date = new Date(d)
-    const day = date.getDay() // 0 Sun .. 6 Sat
-    const diff = date.getDate() - day + 1 // make week start Monday
-    return new Date(date.setDate(diff))
+    try {
+      const r = await createReservation({
+        court: Number(court),
+        start: toLocalISO(start),
+        end: toLocalISO(end),
+      })
+      setReservations(prev => [...prev, r])
+      toast(`Court ${court} reserved on ${start.toLocaleDateString()} at ${startTime}.`, 'success')
+    } catch (err) {
+      toast(err.message || 'Reservation failed — please try again.', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const weekStart = startOfWeek(new Date())
-  const days = Array.from({length:7}).map((_,i)=>{
+  const days = Array.from({ length: 7 }, (_, i) => {
     const dt = new Date(weekStart)
-    dt.setDate(weekStart.getDate()+i)
+    dt.setDate(weekStart.getDate() + i)
     return dt
   })
 
   const times = []
-  for(let h=8; h<=21; h++) times.push(h)
+  for (let h = HOURS.open; h < HOURS.close; h++) times.push(h)
 
-  function cellReservationFor(day, hour){
-    const matching = reservations.find(r=>{
+  function cellReservationFor(day, hour) {
+    return reservations.find(r => {
       const s = new Date(r.start)
-      return s.getFullYear()===day.getFullYear() && s.getMonth()===day.getMonth() && s.getDate()===day.getDate() && s.getHours()===hour
+      return (
+        s.getFullYear() === day.getFullYear() &&
+        s.getMonth() === day.getMonth() &&
+        s.getDate() === day.getDate() &&
+        s.getHours() === hour
+      )
     })
-    return matching
   }
 
-  function handleCellClick(day, hour){
-    const d = day.toISOString().slice(0,10)
-    const hh = String(hour).padStart(2,'0')+":00"
-    setDate(d)
-    setStartTime(hh)
+  function handleCellClick(day, hour) {
+    setDate(day.toISOString().slice(0, 10))
+    setStartTime(String(hour).padStart(2, '0') + ':00')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Court Reservations</h1>
-      <p className="mb-4">Select a court, date and time to reserve your spot. Click a slot to prefill the form above.</p>
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Court Reservations</h1>
+      <p className="text-gray-600 mb-6">
+        Book a court during open hours ({HOURS.label}). Click a calendar slot to pre-fill the form.
+      </p>
 
-      <div className="p-4 border rounded mb-6">
-        <form onSubmit={handleReserve} className="grid md:grid-cols-4 gap-2">
-          <select value={court} onChange={e=>setCourt(e.target.value)} className="border px-2 py-1 rounded">
-            <option value={1}>Court 1</option>
-            <option value={2}>Court 2</option>
-            <option value={3}>Court 3</option>
-            <option value={4}>Court 4</option>
-          </select>
-          <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="border px-2 py-1 rounded" />
-          <input type="time" value={startTime} onChange={e=>setStartTime(e.target.value)} className="border px-2 py-1 rounded" />
-          <div className="flex items-center">
-            <input type="number" min={30} step={30} value={duration} onChange={e=>setDuration(Number(e.target.value))} className="w-24 border px-2 py-1 rounded mr-2" />
-            <button disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded">{loading? 'Reserving...' : 'Reserve (demo)'}</button>
+      {/* Reservation form */}
+      <div className="p-5 border rounded-xl bg-white shadow-sm mb-8">
+        <form onSubmit={handleReserve} className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 items-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Court</label>
+            <select
+              value={court}
+              onChange={e => setCourt(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+            >
+              {COURTS.numbers.map(n => (
+                <option key={n} value={n}>Court {n}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Start time</label>
+            <input
+              type="time"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              min={`${String(HOURS.open).padStart(2, '0')}:00`}
+              max={`${String(HOURS.close - 1).padStart(2, '0')}:30`}
+              className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Duration (min)</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={30}
+                max={120}
+                step={30}
+                value={duration}
+                onChange={e => setDuration(Number(e.target.value))}
+                className="w-24 border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:outline-none"
+              />
+              <button
+                disabled={loading}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                {loading ? 'Booking…' : 'Reserve'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
-      <div className="overflow-auto">
-        <table className="w-full table-fixed border-collapse">
+      {/* Weekly calendar */}
+      <div className="overflow-x-auto rounded-xl border shadow-sm">
+        <table className="w-full min-w-[640px] table-fixed border-collapse text-sm">
           <thead>
-            <tr>
-              <th className="w-20 p-2 border bg-gray-50">Time</th>
-              {days.map((d,idx)=> (
-                <th key={idx} className="p-2 border text-left">{d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</th>
+            <tr className="bg-gray-50">
+              <th className="w-16 p-2 border-b border-r text-gray-500 font-medium text-xs">Time</th>
+              {days.map((d, i) => (
+                <th key={i} className="p-2 border-b text-left font-medium text-gray-700 text-xs">
+                  {d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {times.map(hour=> (
+            {times.map(hour => (
               <tr key={hour} className="align-top">
-                <td className="p-2 border text-sm">{String(hour).padStart(2,'0')}:00</td>
-                {days.map((d,di)=>{
+                <td className="p-2 border-b border-r text-xs text-gray-400 font-mono bg-gray-50">
+                  {String(hour).padStart(2, '0')}:00
+                </td>
+                {days.map((d, di) => {
                   const r = cellReservationFor(d, hour)
                   return (
-                    <td key={di} onClick={()=>!r && handleCellClick(d, hour)} className={`p-2 border h-16 align-top ${r? 'bg-red-50 cursor-default':'hover:bg-green-50 cursor-pointer'}`}>
+                    <td
+                      key={di}
+                      onClick={() => !r && handleCellClick(d, hour)}
+                      className={`p-2 border-b h-14 align-top text-xs transition-colors ${
+                        r
+                          ? 'bg-red-50 cursor-default'
+                          : 'hover:bg-green-50 cursor-pointer'
+                      }`}
+                    >
                       {r ? (
-                        <div className="text-sm">Court {r.court} — <span className="text-xs text-gray-600">Reserved</span></div>
+                        <span className="text-red-600 font-medium">Ct {r.court} — Reserved</span>
                       ) : (
-                        <div className="text-sm text-gray-400">Available</div>
+                        <span className="text-gray-300">Available</span>
                       )}
                     </td>
                   )
